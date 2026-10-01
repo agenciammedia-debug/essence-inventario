@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Essence Inventory</title>
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.min.css" rel="stylesheet" type="text/css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .hidden-menu { display: none !important; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f2f2f7; min-height: 100vh; }
+    .apple-card { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(15px); border-radius: 22px; transition: all 0.2s ease; border: 1px solid rgba(0,0,0,0.05); }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .chip-active { background-color: #007aff !important; color: white !important; border-color: #007aff !important; }
+    .chip { padding: 8px 16px; border-radius: 12px; background: white; font-size: 14px; font-weight: 600; color: #8e8e93; border: 1px solid rgba(0,0,0,0.05); white-space: nowrap; transition: all 0.2s; }
+    .shopping-item { background: white; border-bottom: 0.5px solid rgba(0,0,0,0.05); padding: 16px 8px; }
+    .qty-badge { background: #f2f2f7; color: #ff3b30; font-weight: 800; padding: 4px 10px; border-radius: 8px; font-size: 14px; }
+    @keyframes pulse-red { 0%, 100% { box-shadow: 0 0 0px rgba(255, 59, 48, 0); } 50% { box-shadow: 0 0 20px rgba(255, 59, 48, 0.4); } }
+    .critical-alert { border: 1.5px solid rgba(255, 59, 48, 0.3) !important; animation: pulse-red 2s infinite ease-in-out; }
+    .ios-navbar {
+      background: rgba(255, 255, 255, 0.75) !important;
+      backdrop-filter: saturate(180%) blur(20px) !important;
+      -webkit-backdrop-filter: saturate(180%) blur(20px) !important;
+      border: 1px solid rgba(255, 255, 255, 0.4) !important;
+      border-radius: 35px !important;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
+      width: 85% !important;
+      max-width: 380px !important;
+    }
+    .nav-button { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; background: transparent; border: none; transition: transform 0.2s ease; }
+    .nav-button:active { transform: scale(0.9); }
+    .text-active { color: #007aff !important; }
+    .text-inactive { color: #8e8e93 !important; }
+    .active-salida:active { background-color: #ff3b30 !important; color: white !important; box-shadow: 0 0 15px rgba(255, 59, 48, 0.6); }
+    .active-entrada:active { background-color: #34c759 !important; color: white !important; box-shadow: 0 0 15px rgba(52, 199, 89, 0.6); }
+
+    /* ---- SEDES ---- */
+    .sede-pill { display: inline-flex; align-items: center; gap: 4px; color: white; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; transition: transform 0.15s; }
+    .sede-pill:active { transform: scale(0.94); }
+    .sede-btn { transition: transform 0.15s; }
+    .sede-btn:active { transform: scale(0.97); }
+  </style>
+</head>
+<body class="p-5 pb-32">
+
+  <!-- ===== PANTALLA DE SELECCIÓN DE SEDE ===== -->
+  <div id="pantalla-sede" class="fixed inset-0 z-[300] bg-[#f2f2f7] flex flex-col justify-center px-6">
+    <div class="text-center mb-10">
+      <h1 class="text-4xl font-extrabold text-black tracking-tight">Essence Studio</h1>
+      <p class="text-gray-500 font-medium mt-1">¿En qué sede estás?</p>
+    </div>
+    <div class="space-y-4 max-w-sm w-full mx-auto">
+      <button onclick="seleccionarSede('Miraflores')" class="sede-btn apple-card w-full p-5 flex items-center gap-4 shadow-sm">
+        <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-xl" style="background:#007aff">M</div>
+        <div class="text-left flex-1">
+          <p class="text-xl font-bold text-gray-900">Miraflores</p>
+          <p class="text-xs text-gray-400 font-semibold">Sede principal</p>
+        </div>
+        <svg class="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+      </button>
+      <button onclick="seleccionarSede('Surco')" class="sede-btn apple-card w-full p-5 flex items-center gap-4 shadow-sm">
+        <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-xl" style="background:#af52de">S</div>
+        <div class="text-left flex-1">
+          <p class="text-xl font-bold text-gray-900">Surco</p>
+          <p class="text-xs text-gray-400 font-semibold">Segunda sede</p>
+        </div>
+        <svg class="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="drawer drawer-end">
+    <input id="my-drawer" type="checkbox" class="drawer-toggle" />
+    <div class="drawer-content">
+      <header class="mb-8 mt-4 flex justify-between items-end">
+        <div>
+          <h1 class="text-4xl font-extrabold text-black tracking-tight">Essence Studio</h1>
+          <p class="text-gray-500 font-medium flex items-center gap-2 mt-1">
+            Inventario
+            <button id="sede-pill" onclick="mostrarSelectorSede()" class="sede-pill" style="background:#007aff">
+              <span id="sede-label">—</span>
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg>
+            </button>
+          </p>
+        </div>
+        <button id="header-action-btn" onclick="accionPrincipal()" class="btn btn-circle bg-blue-100 border-none text-[#007aff]">
+          <svg id="icon-plus" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="w-6 h-6"><path d="M12 4.5v15m7.5-7.5h-15" /></svg>
+          <svg id="icon-copy" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" class="w-6 h-6 hidden">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75" />
+          </svg>
+        </button>
+      </header>
+
+      <div class="mb-6">
+        <input type="text" id="search" placeholder="Buscar..." class="input w-full rounded-2xl border-none shadow-sm" oninput="filtrar()">
+      </div>
+
+      <div id="categorias-menu" class="flex gap-2 overflow-x-auto pb-4 no-scrollbar"></div>
+
+      <div id="lista-productos" class="space-y-4"></div>
+    </div>
+
+    <div class="drawer-side z-[250]">
+      <label for="my-drawer" class="drawer-overlay"></label>
+      <div class="p-6 w-80 min-h-full bg-white rounded-l-3xl shadow-2xl">
+        <div class="mb-6 mt-4">
+          <h2 class="text-2xl font-bold text-gray-800">Registrar</h2>
+          <p class="text-sm font-semibold" id="drawer-sede"></p>
+        </div>
+        <div class="form-control space-y-4">
+          <div>
+            <label class="label"><span class="label-text font-bold text-gray-600">Nombre del Producto</span></label>
+            <input type="text" id="f-nombre" list="productos-existentes" oninput="verificarProductoExistente(this.value)"
+                   placeholder="Escribe nombre..." class="input input-bordered w-full rounded-xl focus:border-blue-500 shadow-sm" />
+            <datalist id="productos-existentes"></datalist>
+          </div>
+          <div>
+            <label class="label"><span class="label-text font-bold">Categoría</span></label>
+            <select id="f-categoria" class="select select-bordered w-full rounded-xl text-gray-700 shadow-sm">
+              <option disabled selected>Seleccionar...</option>
+              <option>Manicure</option><option>Pedicure</option><option>Esmaltes</option><option>Cat Eyes</option>
+              <option>Bases</option><option>3D</option><option>Pestañas</option><option>Depilación</option>
+              <option>Cabello</option><option>Limpieza</option><option>Cafetería</option>
+            </select>
+          </div>
+          <div class="flex gap-4">
+            <div class="w-1/2">
+              <label class="label"><span class="label-text font-bold">Stock</span></label>
+              <input type="number" id="f-cantidad" value="0" class="input input-bordered w-full rounded-xl text-center" />
+              <p id="msg-stock" class="text-[9px] text-gray-400 mt-1 hidden text-center italic">No editable aquí</p>
+            </div>
+            <div class="w-1/2">
+              <label class="label"><span class="label-text font-bold">Aviso Mín.</span></label>
+              <input type="number" id="f-minimo" value="2" class="input input-bordered w-full rounded-xl text-center" />
+            </div>
+          </div>
+          <button onclick="guardarNuevo()" id="btn-guardar" class="btn btn-primary w-full rounded-2xl bg-[#007aff] border-none text-white mt-4">Confirmar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== CONEXIÓN CON GOOGLE SHEETS (reemplaza google.script.run) =====
+    const API_URL = 'PEGA_AQUI_TU_URL_/exec';
+    const TOKEN_KEY = 'essence_token';
+
+    function getToken() {
+      let t = null;
+      try { t = localStorage.getItem(TOKEN_KEY); } catch (e) {}
+      if (!t) {
+        t = (prompt('Clave de acceso') || '').trim();
+        try { localStorage.setItem(TOKEN_KEY, t); } catch (e) {}
+      }
+      return t;
+    }
+
+    function crearRunner(ok, fail) {
+      return new Proxy({}, {
+        get(_, fn) {
+          if (fn === 'withSuccessHandler') return h => crearRunner(h, fail);
+          if (fn === 'withFailureHandler') return h => crearRunner(ok, h);
+          return (...args) => {
+            fetch(API_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita bloqueo CORS
+              body: JSON.stringify({ fn, args, token: getToken() }),
+              keepalive: true
+            })
+              .then(r => r.json())
+              .then(res => { if (!res.ok) throw new Error(res.error); if (ok) ok(res.data); })
+              .catch(err => {
+                if (err.message === 'No autorizado') {
+                  try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
+                  alert('Clave incorrecta'); location.reload(); return;
+                }
+                fail ? fail(err) : console.error(err);
+              });
+          };
+        }
+      });
+    }
+    window.google = { script: { run: crearRunner() } };
+  </script>
+
+  <script>
+    const SEDE_COLOR = { Miraflores: '#007aff', Surco: '#af52de' };
+    let sedeActual = null;
+    let inventarioFull = [];
+    let categoriaSeleccionada = 'Todos';
+    let vistaActual = 'inventario';
+    let timersMovimientos = {};
+    let acumuladores = {};
+
+    window.onload = () => cargarCategorias();
+
+    // Si se cierra/minimiza la app antes de los 2 s, se envía lo pendiente
+    document.addEventListener('visibilitychange', () => { if (document.hidden) enviarPendientes(); });
+
+    // ================== SEDES ==================
+    function seleccionarSede(sede) {
+      enviarPendientes();
+      sedeActual = sede;
+      const color = SEDE_COLOR[sede];
+      document.getElementById('sede-label').innerText = sede;
+      document.getElementById('sede-pill').style.background = color;
+      const ds = document.getElementById('drawer-sede');
+      ds.innerText = 'Sede ' + sede; ds.style.color = color;
+      document.getElementById('pantalla-sede').classList.add('hidden');
+
+      // Reset de filtros y vista
+      document.getElementById('search').value = '';
+      categoriaSeleccionada = 'Todos';
+      document.querySelectorAll('.chip').forEach(c => c.classList.toggle('chip-active', c.innerText === 'Todos'));
+      inventarioFull = [];
+      cambiarVista('inventario');
+      mostrarCargando();
+      cargar();
+    }
+
+    function mostrarSelectorSede() {
+      document.getElementById('my-drawer').checked = false;
+      document.getElementById('pantalla-sede').classList.remove('hidden');
+    }
+
+    function mostrarCargando() {
+      document.getElementById('lista-productos').innerHTML =
+        '<div class="flex justify-center p-10"><span class="loading loading-dots loading-lg text-blue-500"></span></div>';
+    }
+
+    // ================== DATOS ==================
+    function cargarCategorias() {
+      google.script.run.withSuccessHandler(cats => {
+        const contenedor = document.getElementById('categorias-menu');
+        contenedor.innerHTML = '';
+        cats.forEach(cat => {
+          const btn = document.createElement('button');
+          btn.className = `chip ${cat === categoriaSeleccionada ? 'chip-active' : ''}`;
+          btn.innerText = cat;
+          btn.onclick = () => seleccionarCategoria(cat, btn);
+          contenedor.appendChild(btn);
+        });
+      }).getCategorias();
+    }
+
+    function cargar() {
+      const sede = sedeActual;
+      google.script.run
+        .withSuccessHandler(data => {
+          if (sede !== sedeActual) return; // respuesta de otra sede: se ignora
+          inventarioFull = data;
+          actualizarDatalist(data);
+          if (vistaActual !== 'historial') filtrar();
+        })
+        .withFailureHandler(err => alert('ERROR al cargar ' + sede + ': ' + err.message))
+        .getInventario(sede);
+    }
+
+    function actualizarDatalist(data) {
+      const dl = document.getElementById('productos-existentes');
+      dl.innerHTML = data.map(p => `<option value="${p.nombre.replace(/"/g, '&quot;')}">`).join('');
+    }
+
+    // ================== FILTROS / RENDER ==================
+    function seleccionarCategoria(cat, elemento) {
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('chip-active'));
+      elemento.classList.add('chip-active');
+      categoriaSeleccionada = cat;
+      filtrar();
+    }
+
+    const normalizar = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+    function filtrar() {
+      const q = normalizar(document.getElementById('search').value);
+      const cat = normalizar(categoriaSeleccionada);
+      renderizar(inventarioFull.filter(p =>
+        normalizar(p.nombre).includes(q) &&
+        (categoriaSeleccionada === 'Todos' || normalizar(p.categoria) === cat)
+      ));
+    }
+
+    function renderizar(data) {
+      const lista = document.getElementById('lista-productos');
+      const datos = vistaActual === 'compras' ? data.filter(p => p.stock <= p.minimo) : data;
+
+      if (datos.length === 0) {
+        const msg = vistaActual === 'compras' ? '¡Todo está en orden!' : 'Nada que mostrar';
+        lista.innerHTML = `<div class="text-center py-20 opacity-50 font-medium">${msg}</div>`;
+        return;
+      }
+
+      if (vistaActual === 'compras') {
+        lista.innerHTML = '<div class="bg-white rounded-3xl p-2 shadow-sm border border-gray-100 overflow-hidden">' +
+          datos.map(p => `
+            <div class="shopping-item flex justify-between items-center">
+              <div class="flex items-center gap-3">
+                <div class="w-2 h-2 rounded-full bg-red-500"></div>
+                <div>
+                  <p class="font-bold text-gray-900">${p.nombre}</p>
+                  <p class="text-[10px] text-gray-400 font-bold uppercase">${p.categoria}</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] text-gray-400 font-bold uppercase">Pedir</span>
+                <span class="qty-badge">${Math.max(p.minimo - p.stock, 1)}</span>
+              </div>
+            </div>`).join('') + '</div>';
+        return;
+      }
+
+      lista.innerHTML = datos.map(p => {
+        const isLow = p.stock <= p.minimo;
+        const ratio = p.minimo > 0 ? Math.min((p.stock / (p.minimo * 2)) * 100, 100) : 100;
+        return `
+          <div class="apple-card p-4 mb-4 ${p.stock <= 0 ? 'critical-alert' : ''}">
+            <div class="flex justify-between items-start mb-3">
+              <div class="flex-1">
+                <h3 class="font-bold text-gray-900 text-lg leading-tight">${p.nombre}</h3>
+                <span class="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full uppercase font-bold tracking-tighter">${p.categoria}</span>
+              </div>
+              <div class="text-right ml-2">
+                <span class="text-2xl font-black ${isLow ? 'text-red-500' : 'text-gray-800'}">${p.stock}</span>
+                <p class="text-[9px] text-gray-400 font-bold uppercase">Disponibles</p>
+              </div>
+            </div>
+            <div class="w-full bg-gray-100 h-1.5 rounded-full mb-4 overflow-hidden">
+              <div class="${isLow ? 'bg-red-500' : 'bg-blue-500'} h-full transition-all duration-500" style="width:${ratio}%"></div>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="ejecutarMovimiento('${p.id}', 'Salida', 1)" class="flex-1 bg-gray-100 text-gray-500 font-bold py-3 rounded-xl transition-all active:scale-95 border border-gray-200 active-salida">-1 Salida</button>
+              <button onclick="ejecutarMovimiento('${p.id}', 'Entrada', 1)" class="flex-1 bg-gray-100 text-gray-500 font-bold py-3 rounded-xl transition-all active:scale-95 border border-gray-200 active-entrada">+1 Entrada</button>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    // ================== MOVIMIENTOS ==================
+    function ejecutarMovimiento(id, tipo, cant) {
+      const p = inventarioFull.find(x => x.id === id);
+      if (!p || (tipo === 'Salida' && p.stock <= 0)) return;
+
+      p.stock += tipo === 'Entrada' ? cant : -cant;
+      filtrar(); // mantiene búsqueda y categoría
+
+      const key = `${sedeActual}|${id}|${tipo}`;
+      acumuladores[key] = (acumuladores[key] || 0) + cant;
+      clearTimeout(timersMovimientos[key]);
+      timersMovimientos[key] = setTimeout(() => enviarMovimiento(key), 2000);
+    }
+
+    function enviarMovimiento(key) {
+      const total = acumuladores[key];
+      clearTimeout(timersMovimientos[key]);
+      delete acumuladores[key];
+      delete timersMovimientos[key];
+      if (!total) return;
+
+      const [sede, id, tipo] = key.split('|');
+      google.script.run
+        .withFailureHandler(err => {
+          alert(`ERROR al registrar en ${sede}: ${err.message}`);
+          if (sede === sedeActual) cargar();
+        })
+        .registrarMovimiento(sede, id, tipo, total, 'Acción rápida acumulada');
+    }
+
+    function enviarPendientes() { Object.keys(acumuladores).forEach(enviarMovimiento); }
+
+    // ================== FORMULARIO ==================
+    function verificarProductoExistente(nombre) {
+      const p = inventarioFull.find(p => p.nombre.toLowerCase() === nombre.trim().toLowerCase());
+      const inCat = document.getElementById('f-categoria');
+      const inMin = document.getElementById('f-minimo');
+      const inStock = document.getElementById('f-cantidad');
+      const btn = document.getElementById('btn-guardar');
+      const msg = document.getElementById('msg-stock');
+
+      if (p) {
+        inCat.value = p.categoria; inMin.value = p.minimo; inStock.value = p.stock;
+        inStock.readOnly = true; inStock.classList.add('bg-gray-100'); msg.classList.remove('hidden');
+        btn.innerText = 'Actualizar Datos'; btn.classList.replace('bg-[#007aff]', 'bg-black');
+      } else {
+        inStock.readOnly = false; inStock.classList.remove('bg-gray-100'); msg.classList.add('hidden');
+        btn.innerText = 'Confirmar'; btn.classList.replace('bg-black', 'bg-[#007aff]');
+      }
+    }
+
+    function resetFormulario() {
+      document.getElementById('f-nombre').value = '';
+      document.getElementById('f-categoria').selectedIndex = 0;
+      document.getElementById('f-cantidad').value = 0;
+      document.getElementById('f-minimo').value = 2;
+      verificarProductoExistente('');
+    }
+
+    function guardarNuevo() {
+      const sede = sedeActual;
+      const datos = {
+        nombre: document.getElementById('f-nombre').value.trim(),
+        categoria: document.getElementById('f-categoria').value,
+        cantidad: document.getElementById('f-cantidad').value,
+        minimo: document.getElementById('f-minimo').value
+      };
+      if (!datos.nombre || datos.categoria.includes('Seleccionar')) return alert('Completa los datos');
+
+      const btn = document.getElementById('btn-guardar');
+      btn.disabled = true;
+      google.script.run
+        .withSuccessHandler(() => {
+          btn.disabled = false;
+          document.getElementById('my-drawer').checked = false;
+          resetFormulario();
+          if (sede === sedeActual) cargar();
+        })
+        .withFailureHandler(err => { btn.disabled = false; alert('ERROR al guardar: ' + err.message); })
+        .agregarOActualizarProducto(sede, datos);
+    }
+
+    // ================== VISTAS ==================
+    function cambiarVista(v) {
+      vistaActual = v;
+      const btns = { inventario: 'btn-inv', compras: 'btn-com', historial: 'btn-his' };
+      const btnHeader = document.getElementById('header-action-btn');
+      const menuCats = document.getElementById('categorias-menu');
+      const buscador = document.getElementById('search').parentElement;
+
+      Object.keys(btns).forEach(k => {
+        const b = document.getElementById(btns[k]);
+        b.classList.toggle('text-active', k === v);
+        b.classList.toggle('text-inactive', k !== v);
+      });
+
+      if (v === 'historial') {
+        btnHeader.classList.add('hidden');
+        menuCats.classList.add('hidden-menu');
+        buscador.classList.add('hidden-menu');
+        return renderizarHistorial();
+      }
+
+      btnHeader.classList.remove('hidden');
+      menuCats.classList.remove('hidden-menu');
+      buscador.classList.remove('hidden-menu');
+
+      const esCompras = v === 'compras';
+      document.getElementById('icon-plus').classList.toggle('hidden', esCompras);
+      document.getElementById('icon-copy').classList.toggle('hidden', !esCompras);
+      btnHeader.className = esCompras
+        ? 'btn btn-circle bg-gray-200 border-none text-gray-500 shadow-none'
+        : 'btn btn-circle bg-blue-100 border-none text-[#007aff]';
+
+      filtrar();
+    }
+
+    function renderizarHistorial() {
+      enviarPendientes();
+      const sede = sedeActual;
+      const lista = document.getElementById('lista-productos');
+      lista.innerHTML = '<div class="flex justify-center p-10"><span class="loading loading-spinner"></span></div>';
+      google.script.run
+        .withSuccessHandler(movs => {
+          if (sede !== sedeActual || vistaActual !== 'historial') return;
+          let html = `<h2 class="text-2xl font-bold mb-6">Actividad <span style="color:${SEDE_COLOR[sede]}">${sede}</span></h2>`;
+          if (!movs.length) html += '<div class="text-center py-20 opacity-50 font-medium">Sin movimientos aún</div>';
+          movs.forEach(m => {
+            const s = m.tipo === 'Salida';
+            html += `<div class="bg-white rounded-2xl p-4 mb-3 flex justify-between items-center border border-gray-50"><div class="flex items-center gap-4"><div class="${s ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'} w-10 h-10 rounded-full flex items-center justify-center font-bold">${s ? '↓' : '↑'}</div><div><p class="font-bold">${m.producto}</p><p class="text-[11px] text-gray-400 italic">${m.fecha}</p></div></div><div class="text-right"><span class="text-lg font-black ${s ? 'text-red-500' : 'text-green-600'}">${s ? '-' : '+'}${m.cantidad}</span></div></div>`;
+          });
+          lista.innerHTML = html;
+        })
+        .withFailureHandler(err => alert('ERROR al cargar historial: ' + err.message))
+        .getAnalitica(sede);
+    }
+
+    function accionPrincipal() {
+      if (vistaActual === 'compras') copiarListaWhatsApp();
+      else document.getElementById('my-drawer').checked = true;
+    }
+
+    function copiarListaWhatsApp() {
+      let faltantes = inventarioFull.filter(p => p.stock <= p.minimo);
+      if (categoriaSeleccionada !== 'Todos') faltantes = faltantes.filter(p => p.categoria === categoriaSeleccionada);
+      if (!faltantes.length) return alert(`¡Todo está en orden en ${categoriaSeleccionada} (${sedeActual})!`);
+
+      const titulo = categoriaSeleccionada === 'Todos' ? 'GENERAL' : categoriaSeleccionada.toUpperCase();
+      let mensaje = `*🛒 PEDIDO ${titulo} - ESSENCE ${sedeActual.toUpperCase()}*\n----------------------------------\n`;
+      faltantes.forEach(p => { mensaje += `• *${p.nombre}*: Pedir ${Math.max(p.minimo - p.stock, 1)} unid.\n`; });
+      mensaje += '----------------------------------\n_Enviado desde Essence App_';
+
+      navigator.clipboard.writeText(mensaje).then(() => alert(`Lista de ${sedeActual} copiada.`));
+    }
+  </script>
+
+  <div class="fixed bottom-8 left-1/2 -translate-x-1/2 w-[92%] max-w-sm h-16 ios-navbar flex items-center justify-around px-6 z-[200]">
+    <button onclick="cambiarVista('inventario')" id="btn-inv" class="nav-button text-active">
+      <svg class="w-6 h-6 mb-0.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+      <span class="text-[9px] font-bold uppercase tracking-widest">Stock</span>
+    </button>
+    <button onclick="cambiarVista('compras')" id="btn-com" class="nav-button text-inactive">
+      <svg class="w-6 h-6 mb-0.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+      <span class="text-[9px] font-bold uppercase tracking-widest">Lista</span>
+    </button>
+    <button onclick="cambiarVista('historial')" id="btn-his" class="nav-button text-inactive">
+      <svg class="w-6 h-6 mb-0.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+      <span class="text-[9px] font-bold uppercase tracking-widest">Log</span>
+    </button>
+  </div>
+</body>
+</html>
