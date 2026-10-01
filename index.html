@@ -143,19 +143,7 @@
 
   <script>
     // ===== CONEXIÓN CON GOOGLE SHEETS (reemplaza google.script.run) =====
-    const API_URL = 'PEGA_AQUI_TU_URL_/exec';
-    const TOKEN_KEY = 'essence_token';
-
-    function getToken() {
-      let t = null;
-      try { t = localStorage.getItem(TOKEN_KEY); } catch (e) {}
-      if (!t) {
-        t = (prompt('Clave de acceso') || '').trim();
-        try { localStorage.setItem(TOKEN_KEY, t); } catch (e) {}
-      }
-      return t;
-    }
-
+    const API_URL = 'https://script.google.com/macros/s/AKfycbz5imJZ90HL6g-5iJh3SFaHUXMMu5h0x1HWD2kNEroLDJhfYVzrYtB-g5ZhEbMjkATl/exec';
     function crearRunner(ok, fail) {
       return new Proxy({}, {
         get(_, fn) {
@@ -165,16 +153,12 @@
             fetch(API_URL, {
               method: 'POST',
               headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita bloqueo CORS
-              body: JSON.stringify({ fn, args, token: getToken() }),
+              body: JSON.stringify({ fn, args }),
               keepalive: true
             })
               .then(r => r.json())
               .then(res => { if (!res.ok) throw new Error(res.error); if (ok) ok(res.data); })
               .catch(err => {
-                if (err.message === 'No autorizado') {
-                  try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
-                  alert('Clave incorrecta'); location.reload(); return;
-                }
                 fail ? fail(err) : console.error(err);
               });
           };
